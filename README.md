@@ -3,159 +3,375 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>普通で便利な分数電卓</title>
+    <title>Liquid Glass Calculator</title>
     <style>
-        body { font-family: sans-serif; background-color: #e0e7ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .calc-container { background: #ffffff; width: 360px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); padding: 20px; }
+        /* --- Liquid Glass Theme Settings --- */
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --text-main: #4a5568;
+            --text-dim: #a0aec0;
+            --accent-color: #667eea; /* ソフトな青紫 */
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 背景グラデーション（ガラス効果を際立たせるため） */
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            overflow: hidden;
+        }
+
+        /* 浮遊する背景装飾（リキッド感） */
+        .blob {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            filter: blur(40px);
+            z-index: -1;
+        }
+        .blob-1 { width: 300px; height: 300px; top: -50px; left: -50px; background: #ff9a9e; }
+        .blob-2 { width: 350px; height: 350px; bottom: -80px; right: -80px; background: #a18cd1; }
+
+        /* --- Calculator Container --- */
+        .calculator {
+            width: 340px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px); /* すりガラス効果 */
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* --- Display Area --- */
+        .display-area {
+            text-align: right;
+            padding: 10px 5px;
+            margin-bottom: 5px;
+        }
+        #input-line {
+            font-size: 14px;
+            color: var(--text-dim);
+            min-height: 1.2em;
+            letter-spacing: 1px;
+        }
+        #result-line {
+            font-size: 36px;
+            font-weight: 300;
+            color: var(--text-main);
+            margin-top: 5px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        /* --- Mode Switcher (Glass Style) --- */
+        .mode-switch {
+            display: flex;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 4px;
+        }
+        .mode-switch label {
+            flex: 1;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-main);
+            padding: 6px 0;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+        .mode-switch input { display: none; }
+        .mode-switch input:checked + span {
+            background: #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-weight: bold;
+            color: var(--accent-color);
+            display: block;
+            height: 100%;
+            width: 100%;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- Keypad --- */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        button {
+            height: 55px;
+            border: 1px solid rgba(255,255,255,0.4);
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 16px;
+            font-size: 18px;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+        }
+        button:hover {
+            background: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+        }
+        button:active { transform: scale(0.95); }
         
-        /* モード選択 */
-        .mode-selector { display: flex; font-size: 11px; background: #eee; border-radius: 8px; margin-bottom: 10px; padding: 3px; }
-        .mode-selector label { flex: 1; text-align: center; padding: 5px; cursor: pointer; border-radius: 6px; }
-        .mode-selector input { display: none; }
-        .mode-selector input:checked + span { background: #4f46e5; color: white; border-radius: 5px; display: block; padding: 2px; }
+        .btn-op { color: var(--accent-color); font-weight: bold; background: rgba(255, 255, 255, 0.4); }
+        .btn-eq { 
+            grid-column: span 2; 
+            background: var(--accent-color); 
+            color: white; 
+            border: none;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-eq:hover { background: #5a67d8; color: white; }
+        .btn-ac { color: #e53e3e; background: rgba(255, 220, 220, 0.3); }
 
-        .display { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 15px; text-align: right; margin-bottom: 15px; }
-        #formula { font-size: 14px; color: #64748b; min-height: 1.5em; overflow-x: auto; }
-        #result { font-size: 28px; font-weight: bold; color: #1e293b; overflow-x: auto; }
+        /* --- History --- */
+        .history-container {
+            margin-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            padding-top: 10px;
+        }
+        .history-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 5px;
+            padding-left: 5px;
+        }
+        #history-list {
+            max-height: 100px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        /* スクロールバーのカスタマイズ */
+        #history-list::-webkit-scrollbar { width: 4px; }
+        #history-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
 
-        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        button { height: 55px; border: none; border-radius: 10px; font-size: 18px; cursor: pointer; background: #f1f5f9; transition: 0.1s; }
-        button:hover { background: #e2e8f0; }
-        button.op { background: #e0e7ff; color: #4f46e5; font-weight: bold; }
-        button.eq { background: #4f46e5; color: white; grid-column: span 2; }
-        button.ac { background: #fecaca; color: #dc2626; }
-
-        .history-box { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
-        .history-title { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 5px; }
-        #history-list { max-height: 120px; overflow-y: auto; font-size: 13px; color: #475569; }
-        .history-item { padding: 4px 0; border-bottom: 1px dashed #eee; }
+        .history-item {
+            font-size: 13px;
+            color: var(--text-main);
+            background: rgba(255,255,255,0.3);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            transition: 0.2s;
+        }
+        .history-item:hover {
+            background: rgba(255,255,255,0.6);
+        }
+        .history-arrow { opacity: 0.3; font-size: 10px; }
     </style>
 </head>
 <body>
 
-<div class="calc-container">
-    <div class="mode-selector">
-        <label><input type="radio" name="mode" value="auto" checked><span>自動(無限時分数)</span></label>
-        <label><input type="radio" name="mode" value="force"><span>強制分数</span></label>
-        <label><input type="radio" name="mode" value="decimal"><span>絶対小数</span></label>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="calculator">
+    
+    <div class="mode-switch">
+        <label>
+            <input type="radio" name="calcMode" value="auto" checked>
+            <span>Auto (無限時)</span>
+        </label>
+        <label>
+            <input type="radio" name="calcMode" value="force">
+            <span>強制分数</span>
+        </label>
+        <label>
+            <input type="radio" name="calcMode" value="decimal">
+            <span>小数のみ</span>
+        </label>
     </div>
 
-    <div class="display">
-        <div id="formula"></div>
-        <div id="result">0</div>
+    <div class="display-area">
+        <div id="input-line"></div>
+        <div id="result-line">0</div>
     </div>
 
-    <div class="btn-grid">
-        <button class="ac" onclick="clearAll()">AC</button>
-        <button class="op" onclick="backspace()">DEL</button>
-        <button class="op" onclick="input('/')">分数(/)</button>
-        <button class="op" onclick="input('*')">×</button>
+    <div class="keypad">
+        <button class="btn-ac" onclick="clearCalc()">AC</button>
+        <button class="btn-op" onclick="backspace()">DEL</button>
+        <button class="btn-op" onclick="append('/')">分数(/)</button>
+        <button class="btn-op" onclick="append('*')">×</button>
 
-        <button onclick="input('7')">7</button>
-        <button onclick="input('8')">8</button>
-        <button onclick="input('9')">9</button>
-        <button class="op" onclick="input('/')">÷</button>
+        <button onclick="append('7')">7</button>
+        <button onclick="append('8')">8</button>
+        <button onclick="append('9')">9</button>
+        <button class="btn-op" onclick="append('/')">÷</button>
 
-        <button onclick="input('4')">4</button>
-        <button onclick="input('5')">5</button>
-        <button onclick="input('6')">6</button>
-        <button class="op" onclick="input('-')">-</button>
+        <button onclick="append('4')">4</button>
+        <button onclick="append('5')">5</button>
+        <button onclick="append('6')">6</button>
+        <button class="btn-op" onclick="append('-')">-</button>
 
-        <button onclick="input('1')">1</button>
-        <button onclick="input('2')">2</button>
-        <button onclick="input('3')">3</button>
-        <button class="op" onclick="input('+')">+</button>
+        <button onclick="append('1')">1</button>
+        <button onclick="append('2')">2</button>
+        <button onclick="append('3')">3</button>
+        <button class="btn-op" onclick="append('+')">+</button>
 
-        <button onclick="input('0')">0</button>
-        <button onclick="input('.')">.</button>
-        <button class="eq" onclick="solve()">=</button>
+        <button onclick="append('0')">0</button>
+        <button onclick="append('.')">.</button>
+        <button class="btn-eq" onclick="calculate()">=</button>
     </div>
 
-    <div class="history-box">
-        <div class="history-title">履歴 (デバイス保存)</div>
-        <div id="history-list"></div>
+    <div class="history-container">
+        <div class="history-label">履歴 (タップで復元)</div>
+        <div id="history-list">
+            </div>
     </div>
 </div>
 
 <script>
-    let currentFormula = "";
-    const gcd = (a, b) => b ? gcd(b, a % b) : Math.abs(a);
+    let currentInput = "";
+    const inputLine = document.getElementById('input-line');
+    const resultLine = document.getElementById('result-line');
+    const historyList = document.getElementById('history-list');
 
-    // 起動時に履歴読み込み
+    // 初期化処理
     window.onload = () => {
-        const saved = JSON.parse(localStorage.getItem('calc_history') || "[]");
-        saved.forEach(item => addHistoryUI(item));
+        loadHistory();
     };
 
-    function input(v) {
-        currentFormula += v;
-        updateView();
+    function append(val) {
+        currentInput += val;
+        updateDisplay();
     }
 
-    function clearAll() {
-        currentFormula = "";
-        document.getElementById('result').innerText = "0";
-        updateView();
+    function clearCalc() {
+        currentInput = "";
+        resultLine.innerText = "0";
+        updateDisplay();
     }
 
     function backspace() {
-        currentFormula = currentFormula.slice(0, -1);
-        updateView();
+        currentInput = currentInput.slice(0, -1);
+        updateDisplay();
     }
 
-    function updateView() {
-        document.getElementById('formula').innerText = currentFormula;
+    function updateDisplay() {
+        // 見やすく整形（*を×に見た目だけ変える等はここで行えますが今回はシンプルに）
+        inputLine.innerText = currentInput;
     }
 
-    function solve() {
+    // 計算実行
+    function calculate() {
         try {
-            const rawResult = eval(currentFormula);
-            const mode = document.querySelector('input[name="mode"]:checked').value;
-            let finalDisplay = "";
+            if (!currentInput) return;
+
+            // 計算実行（evalは簡易的なため使用。本来はライブラリ推奨）
+            const rawResult = eval(currentInput); 
+            
+            // モードに応じた変換
+            const mode = document.querySelector('input[name="calcMode"]:checked').value;
+            let finalOutput = rawResult.toString();
 
             if (mode === 'decimal') {
-                finalDisplay = rawResult.toString();
+                finalOutput = rawResult.toString();
             } else {
-                const isInfinite = rawResult.toString().length > 12; // 簡易的な無限・長小数判定
-                if (mode === 'force' || (mode === 'auto' && isInfinite)) {
-                    finalDisplay = toFraction(rawResult);
-                } else {
-                    finalDisplay = rawResult.toString();
+                // 無限小数判定（簡易的：文字列表現が長い場合）
+                const strVal = rawResult.toString();
+                const isLongDecimal = strVal.includes('.') && strVal.length > 10;
+                
+                if (mode === 'force') {
+                    finalOutput = toFraction(rawResult);
+                } else if (mode === 'auto' && isLongDecimal) {
+                    finalOutput = toFraction(rawResult);
                 }
             }
 
-            const record = `${currentFormula} = ${finalDisplay}`;
-            document.getElementById('result').innerText = finalDisplay;
-            saveHistory(record);
-            currentFormula = rawResult.toString();
+            resultLine.innerText = finalOutput;
+            addToHistory(currentInput, finalOutput);
+            currentInput = rawResult.toString(); // 次の計算のために結果を入力へ
+
         } catch (e) {
-            document.getElementById('result').innerText = "Error";
+            resultLine.innerText = "Error";
         }
     }
 
-    function toFraction(dec) {
-        if (Number.isInteger(dec)) return dec.toString();
-        const precision = 1000000;
-        let num = Math.round(dec * precision);
-        let den = precision;
-        let common = gcd(num, den);
-        return `${num / common}/${den / common}`;
+    // 小数 -> 分数変換ロジック
+    function toFraction(val) {
+        if (Number.isInteger(val)) return val.toString();
+        
+        const tolerance = 1.0E-9; // 許容誤差
+        let h1 = 1, h2 = 0, k1 = 0, k2 = 1;
+        let b = val;
+        
+        do {
+            let a = Math.floor(b);
+            let aux = h1; h1 = a * h1 + h2; h2 = aux;
+            aux = k1; k1 = a * k1 + k2; k2 = aux;
+            b = 1 / (b - a);
+        } while (Math.abs(val - h1 / k1) > val * tolerance);
+
+        return `${h1}/${k1}`;
     }
 
-    function saveHistory(item) {
-        addHistoryUI(item);
-        const saved = JSON.parse(localStorage.getItem('calc_history') || "[]");
-        saved.unshift(item);
-        localStorage.setItem('calc_history', JSON.stringify(saved.slice(0, 20)));
+    // --- 履歴機能 ---
+
+    function addToHistory(formula, result) {
+        const item = { formula, result, id: Date.now() };
+        
+        // UIに追加
+        prependHistoryItem(item);
+
+        // LocalStorageに保存
+        let history = JSON.parse(localStorage.getItem('glass_calc_history') || "[]");
+        history.unshift(item);
+        if (history.length > 20) history.pop(); // 最大20件
+        localStorage.setItem('glass_calc_history', JSON.stringify(history));
     }
 
-    function addHistoryUI(text) {
-        const list = document.getElementById('history-list');
+    function loadHistory() {
+        let history = JSON.parse(localStorage.getItem('glass_calc_history') || "[]");
+        history.forEach(item => prependHistoryItem(item, false)); // false = 後ろに追加しない（読み込み順序維持のため工夫が必要だが今回は簡易的に逆順ループせずunshift同様の処理を行う）
+        // 読み込み時は逆順になっているので、一旦クリアして正しい順序で描画するのがベター
+        historyList.innerHTML = ''; 
+        history.forEach(item => {
+            const el = createHistoryElement(item);
+            historyList.appendChild(el);
+        });
+    }
+
+    function prependHistoryItem(item) {
+        const el = createHistoryElement(item);
+        historyList.prepend(el);
+    }
+
+    function createHistoryElement(item) {
         const div = document.createElement('div');
-        div.className = "history-item";
-        div.innerText = text;
-        list.prepend(div);
+        div.className = 'history-item';
+        div.innerHTML = `
+            <span>${item.formula} = <strong>${item.result}</strong></span>
+            <span class="history-arrow">↺</span>
+        `;
+        // タップで復元
+        div.onclick = () => {
+            currentInput = item.formula; // 式を戻す（計算結果を戻したい場合は item.result に変更）
+            updateDisplay();
+            resultLine.innerText = item.result;
+        };
+        return div;
     }
+
 </script>
 </body>
 </html>
